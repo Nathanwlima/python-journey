@@ -1,0 +1,58 @@
+import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import root_scalar
+import matplotlib.pyplot as plt
+
+#´fixed parameters
+L = 10  # box length
+x_span = (0, L)
+x_eval = np.linspace(0, L, 300)
+
+# first boundary (ψ(0)=0, ψ'(0)=1)
+y0 = [0 + 0j, 1 + 0j]
+
+#Schrodinger Eq
+def schrodinger(x, Y, E):
+    psi, dpsi = Y
+    return [dpsi, -E * psi]
+
+#Finding E to math the second boundary
+def erro(E):
+    sol = solve_ivp(
+        schrodinger,
+        x_span,
+        y0,
+        t_eval=x_eval,
+        args=(E,)
+    )
+    return sol.y[0, -1].real  # queremos ψ(L)
+
+# Random range (aftewards, study ranges)
+E1 = 0.1
+E2 = 2.0
+
+sol_root = root_scalar(erro, bracket=[E1, E2], method='bisect')
+
+E_found = sol_root.root
+print("Energy found:", E_found)
+
+# Solution with correct energy
+sol = solve_ivp(
+    schrodinger,
+    x_span,
+    y0,
+    t_eval=x_eval,
+    args=(E_found,)
+)
+
+#Plot
+plt.plot(sol.t, sol.y[0].real, label='ψ(x)')
+plt.axhline(0, linestyle='--')
+
+plt.title(f"Autofunction — E = {E_found:.4f}")
+plt.xlabel("x")
+plt.ylabel("ψ(x)")
+
+plt.legend()
+plt.grid()
+plt.show()
